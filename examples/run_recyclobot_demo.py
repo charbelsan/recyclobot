@@ -111,10 +111,10 @@ def select_planner(force_planner=None, config_path=None):
         print("Using Qwen-VL planner (local)")
         return "qwen", plan
     
-    # Default fallback to Qwen
-    from recyclobot.planning.qwen_planner import plan
-    print("Using Qwen-VL planner (local) as fallback")
-    return "qwen", plan
+    # Default: Use direct SmolVLA execution (most efficient)
+    from recyclobot.planning.direct_smolvla_planner import plan
+    print("Using direct SmolVLA execution (default - no separate planner needed)")
+    return "direct", plan
 
 
 def create_environment(robot_type="sim"):
@@ -294,7 +294,7 @@ def main():
     parser.add_argument(
         "--planner",
         choices=["direct", "gemini", "qwen", "openai", "anthropic", "local", "ollama", "vllm", "together", "smolvlm"],
-        help="Force specific planner (default: auto-select, 'direct' uses SmolVLA without separate planner)"
+        help="Planner type (default: 'direct' - uses SmolVLA's built-in vision-language understanding)"
     )
     parser.add_argument(
         "--config",

@@ -47,9 +47,12 @@ python -m lerobot.scripts.control_robot --robot.type so101 --control.type calibr
 # 2. Test teleoperation
 python -m lerobot.scripts.control_robot --robot.type so101 --control.type teleoperate
 
-# 3. Run autonomous demo
-export GEMINI_API_KEY="your-key"
+# 3. Run autonomous demo (uses SmolVLA directly by default)
 python examples/run_recyclobot_demo.py --robot so101 --prompt "Sort the recycling"
+
+# Optional: Use external planner like Gemini
+export GEMINI_API_KEY="your-key"
+python examples/run_recyclobot_demo.py --robot so101 --planner gemini --prompt "Sort the recycling"
 
 # 4. Collect dataset (CORRECTED VERSION!)
 python scripts/collect_recyclobot_dataset_v3.py \
@@ -61,7 +64,18 @@ python scripts/collect_recyclobot_dataset_v3.py \
 
 ## 📊 System Architecture
 
-### Option 1: Two-Stage Planning (Current Default)
+### Default: Direct SmolVLA Execution (Recommended)
+```
+User Task: "Sort the recycling"
+    ↓
+SmolVLA Policy (Vision + Language → Actions)
+    ↓
+Robot Execution (SO-101)
+```
+
+Since SmolVLA = SmolVLM + Action Expert, it already has vision-language understanding built-in!
+
+### Alternative: Two-Stage Planning (Optional)
 ```
 User Task: "Sort the recycling"
     ↓
@@ -76,16 +90,7 @@ SmolVLA Policy (Vision + Language → Actions)
 Robot Execution (SO-101)
 ```
 
-### Option 2: Direct SmolVLA (More Efficient!)
-```
-User Task: "Sort the recycling"
-    ↓
-SmolVLA Policy (Vision + Language → Actions)
-    ↓
-Robot Execution (SO-101)
-```
-
-Since SmolVLA = SmolVLM + Action Expert, it already has vision-language understanding!
+Use this if you want explicit planning steps or need to use cloud-based models.
 
 ### How SmolVLA Works
 
@@ -96,14 +101,15 @@ SmolVLA is a Vision-Language-Action model that:
 4. The language specifies WHAT to manipulate (e.g., "pick up the red block")
 5. Uses vision to understand WHERE and HOW
 
-### Using SmolVLA Directly (Recommended)
+### Usage Examples
 
 ```bash
-# Skip separate planning, use SmolVLA's built-in understanding
-python examples/run_recyclobot_demo.py --robot so101 --planner direct --prompt "Sort all the recycling"
-```
+# Default: Direct SmolVLA execution (no separate planner)
+python examples/run_recyclobot_demo.py --robot so101 --prompt "Sort all the recycling"
 
-This is more efficient because SmolVLA already contains the same vision-language model!
+# Optional: Use external planner
+python examples/run_recyclobot_demo.py --robot so101 --planner gemini --prompt "Sort all the recycling"
+```
 
 ## 🗂️ Critical: Dataset Format
 
