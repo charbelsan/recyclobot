@@ -15,7 +15,7 @@ try:
     import lerobot
     print(f"✅ LeRobot version: {lerobot.__version__}")
 except ImportError:
-    print("❌ LeRobot not installed. Run: pip install 'lerobot[smolvla]==0.4.0'")
+    print("❌ LeRobot not installed. Run: pip install 'lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
     sys.exit(1)
 
 try:

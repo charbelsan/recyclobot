@@ -212,7 +212,7 @@ def create_environment(robot_type="sim"):
             
         except ImportError as e:
             print(f"Error: LeRobot not properly installed: {e}")
-            print("Install with: pip install 'lerobot[feetech]'")
+            print("Install with: pip install 'lerobot[feetech] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
             sys.exit(1)
         except Exception as e:
             print(f"Error connecting to robot: {e}")
@@ -289,7 +289,7 @@ def create_policy(robot_type="sim"):
         
     except ImportError as e:
         print(f"Error: LeRobot not installed properly: {e}")
-        print("Please run: pip install 'lerobot[smolvla]'")
+        print("Please run: pip install 'lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
         sys.exit(1)
     except Exception as e:
         print(f"Error loading SmolVLA: {e}")

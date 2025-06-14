@@ -91,7 +91,7 @@ def run_gym_demo(args):
     except Exception as e:
         print(f"Error creating environment: {e}")
         print("\nMake sure you've installed the environment:")
-        print(f"  pip install 'lerobot[{args.env}]'")
+        print(f"  pip install 'lerobot[{args.env}] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
         return
     
     # Create policy

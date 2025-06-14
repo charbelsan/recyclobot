@@ -33,6 +33,21 @@ python -c "from recyclobot.planning.direct_smolvla_planner import plan; \
 
 **See [QUICK_INFERENCE_GUIDE.md](QUICK_INFERENCE_GUIDE.md) for detailed testing without training!**
 
+### Run in Simulation (No Robot Needed)
+
+```bash
+# Install simulation extras
+pip install "lerobot[aloha,pusht,xarm] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
+
+# Run with gym environments
+python examples/run_recyclobot_gym_demo.py --env aloha --render
+
+# Or with mock environment
+python examples/run_recyclobot_demo.py --robot sim
+```
+
+**See [SIMULATION_GUIDE.md](SIMULATION_GUIDE.md) for complete simulation setup!**
+
 ### Installation
 
 ```bash
@@ -52,9 +67,8 @@ pip install torch==2.2.1+cu121 torchvision==0.17.1+cu121 -f https://download.pyt
 
 # For CPU only: pip install torch torchvision
 
-# Install LeRobot with SmolVLA support
-pip install "lerobot[smolvla,feetech]==0.4.0"
-# OR for bleeding edge: pip install "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git"
+# Install LeRobot with SmolVLA support from GitHub (0.4.0 not on PyPI)
+pip install "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
 
 # Download SmolVLA weights (REQUIRED!)
 huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot

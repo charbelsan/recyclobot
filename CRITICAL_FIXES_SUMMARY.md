@@ -5,11 +5,11 @@ This document summarizes the critical fixes implemented based on the judges' rev
 ## ✅ Completed Fixes
 
 ### 1. LeRobot Version Consistency (HIGH PRIORITY)
-**Issue**: Inconsistent LeRobot versions (0.4.* vs >=0.5.0)
+**Issue**: Inconsistent LeRobot versions (0.4.* vs >=0.5.0) and version 0.4.0 not available on PyPI
 **Fix Applied**: 
-- Updated all references to use `lerobot==0.4.0`
+- Updated all references to use git+https installation: `lerobot @ git+https://github.com/huggingface/lerobot.git@v0.4.0`
 - Files updated: requirements.txt, setup.py, README.md, SETUP_GPU_SIMULATION.md, SETUP_FOR_YOUR_GPU.md, quick_setup.sh, QUICK_START_GPU.sh
-- Rationale: Version 0.5.0 doesn't exist on PyPI
+- Rationale: Version 0.4.0 doesn't exist on PyPI, must install from GitHub with tag v0.4.0
 
 ### 2. Model Weights Consistency (HIGH PRIORITY)
 **Issue**: Inconsistent model references (koch_aloha vs smolvla_base)

@@ -17,7 +17,7 @@ conda activate recyclobot
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # 4. Install LeRobot and RecycloBot
-pip install "lerobot[smolvla]==0.4.0"
+pip install "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git"
 pip install -e .
 
 # 5. Download SmolVLA weights (REQUIRED!)

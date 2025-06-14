@@ -31,8 +31,8 @@ python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)}')"
 ## 3. Install LeRobot with Simulation Support
 
 ```bash
-# Install LeRobot with SmolVLA and simulation environments
-pip install "lerobot[smolvla,sim]==0.4.0"
+# Install LeRobot with SmolVLA and simulation environments from GitHub
+pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
 
 # Install gym environments (choose what you need)
 pip install "lerobot[aloha]"    # Dual-arm manipulation
@@ -57,7 +57,7 @@ pip install "transformers[vision]>=4.44.0" "accelerate>=0.26.0"
 
 ```bash
 # Download SmolVLA pretrained weights (REQUIRED!)
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 
 # Optional: Download base SmolVLA model
 huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
@@ -147,7 +147,7 @@ huggingface-cli login
 
 # Clear cache and retry
 rm -rf ~/.cache/lerobot
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 ```
 
 ### If you're behind a proxy:

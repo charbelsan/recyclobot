@@ -21,7 +21,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 
 # Step 4: Install LeRobot and RecycloBot
 echo -e "\n🤖 Step 4: Installing LeRobot and RecycloBot..."
-pip install "lerobot[smolvla,sim]==0.4.0"
+pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
 pip install "lerobot[aloha]"  # Dual-arm manipulation environment
 pip install -e .
 
@@ -31,7 +31,7 @@ pip install gymnasium opencv-python-headless imageio[ffmpeg] matplotlib
 
 # Step 6: Download SmolVLA weights
 echo -e "\n📥 Step 6: Downloading SmolVLA model weights..."
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 
 # Step 7: Run tests
 echo -e "\n🧪 Step 7: Running tests..."
