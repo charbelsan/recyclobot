@@ -26,7 +26,7 @@ conda activate recyclobot
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # Install LeRobot with simulation support and gym environments
-pip install "lerobot[smolvla,sim]>=0.5.0"
+pip install "lerobot[smolvla,sim]==0.4.0"
 
 # Install specific gym environments (choose based on your needs)
 pip install "lerobot[aloha]"    # Dual-arm manipulation tasks
@@ -44,9 +44,6 @@ pip install gymnasium opencv-python-headless imageio[ffmpeg]
 
 ```bash
 # Download SmolVLA weights (REQUIRED!)
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
-
-# Optional: Download additional models for testing
 huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 
 # Optional: Install local VLM planner (Qwen)
@@ -206,7 +203,7 @@ try:
     policy = make_policy(
         "smolvla",
         policy_kwargs={
-            "pretrained": "lerobot/koch_aloha",
+            "pretrained": "lerobot/smolvla_base",
             "config_overrides": {
                 "input_shapes": {
                     "observation.images.top": [3, 480, 640],
@@ -285,7 +282,7 @@ pip install matplotlib plotly pandas
 ```bash
 # Clear cache and re-download
 rm -rf ~/.cache/lerobot
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 ```
 
 #### Simulation Display Issues

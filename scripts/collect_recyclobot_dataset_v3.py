@@ -138,7 +138,7 @@ def collect_episode_with_planning(
     from lerobot.common.policies.factory import make_policy
     
     policy_kwargs = {
-        "pretrained": "lerobot/koch_aloha",
+        "pretrained": "lerobot/smolvla_base",
         "config_overrides": {
             "input_shapes": {
                 "observation.images.top": [3, 480, 640],

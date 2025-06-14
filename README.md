@@ -22,11 +22,24 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
 conda create -n recyclobot python=3.10 -y
 conda activate recyclobot
 
+# Install system dependencies (Linux)
+sudo apt-get update && sudo apt-get install -y build-essential python3-dev
+
+# Install PyTorch with CUDA support
+# Option 1: Using conda (recommended for CUDA)
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+
+# Option 2: Using pip (adjust for your CUDA version)
+pip install torch==2.2.1+cu121 torchvision==0.17.1+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+
+# For CPU only: pip install torch torchvision
+
 # Install LeRobot with SmolVLA support
-pip install "lerobot[smolvla,feetech]>=0.5.0"
+pip install "lerobot[smolvla,feetech]==0.4.0"
+# OR for bleeding edge: pip install "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git"
 
 # Download SmolVLA weights (REQUIRED!)
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 
 # Install RecycloBot
 git clone https://github.com/your-username/recyclobot.git
@@ -169,8 +182,26 @@ dataset/
 
 1. **Observation Format**: Use `"observation.images.top"` (not `"main_camera"`)
 2. **State Dimensions**: SO-101 has 14 dims (7 joints × 2 for pos+vel)
-3. **Model Loading**: Use `lerobot/koch_aloha` (a real pretrained model)
+3. **Model Loading**: Use `lerobot/smolvla_base` (the SmolVLA base model)
 4. **Task Handling**: Pass task during inference AND data collection
+
+### Robot Configuration Details
+
+#### SO-101/SO-ARM100 State Dimensions
+The state vector contains 14 dimensions:
+- **Positions (7 dims)**: 6 joint angles + 1 gripper position
+- **Velocities (7 dims)**: 6 joint velocities + 1 gripper velocity
+
+```python
+# State vector structure:
+state = [j0_pos, j1_pos, j2_pos, j3_pos, j4_pos, j5_pos, gripper_pos,  # positions
+         j0_vel, j1_vel, j2_vel, j3_vel, j4_vel, j5_vel, gripper_vel]  # velocities
+```
+
+#### Action Space
+Actions are 7-dimensional:
+- **Joint commands (6 dims)**: Target positions for 6 joints
+- **Gripper command (1 dim)**: Open/close command
 
 ### Correct Inference Code
 
@@ -230,7 +261,7 @@ planners:
 ### SmolVLA Won't Load
 ```bash
 # Download weights manually
-huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
 ```
 
 ### Dataset Issues
@@ -239,9 +270,30 @@ huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
 - Verify `meta/tasks.jsonl` exists after collection
 
 ### Camera Problems
+
+#### Finding Camera Index
 ```bash
-python -m lerobot.find_cameras  # Find correct index
-# Use --robot-overrides cameras.top.index=1
+# List all available cameras
+python -m lerobot.scripts.find_cameras
+
+# Test a specific camera
+python -c "import cv2; cap = cv2.VideoCapture(0); print(f'Camera 0: {cap.isOpened()}'); cap.release()"
+
+# Alternative method using v4l2 (Linux)
+ls -la /dev/video*
+v4l2-ctl --list-devices
+```
+
+#### Using the Correct Camera
+```bash
+# Override camera index in commands
+python examples/run_recyclobot_demo.py --robot so101 \
+    --robot-overrides cameras.top.index=1
+
+# For data collection
+python scripts/collect_recyclobot_dataset_v3.py \
+    --robot-path lerobot/configs/robot/so101.yaml \
+    --robot-overrides cameras.top.index=1
 ```
 
 ## 📁 Project Structure

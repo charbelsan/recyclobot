@@ -20,15 +20,36 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
-import torch
-from PIL import Image
+try:
+    import numpy as np
+except ImportError:
+    print("Error: NumPy not installed. Run: pip install numpy")
+    sys.exit(1)
+
+try:
+    import torch
+except ImportError:
+    print("Error: PyTorch not installed.")
+    print("Install with conda: conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia")
+    print("Or with pip: pip install torch torchvision")
+    sys.exit(1)
+
+try:
+    from PIL import Image
+except ImportError:
+    print("Error: Pillow not installed. Run: pip install pillow")
+    sys.exit(1)
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from recyclobot.control.skill_runner import SkillRunner
-from recyclobot.logging.dataset_logger import RecycloBotLogger
+try:
+    from recyclobot.control.skill_runner import SkillRunner
+    from recyclobot.logging.dataset_logger import RecycloBotLogger
+except ImportError as e:
+    print(f"Error: RecycloBot modules not found: {e}")
+    print("Make sure you're in the recyclobot directory and have run: pip install -e .")
+    sys.exit(1)
 
 
 def select_planner(force_planner=None, config_path=None):
@@ -226,7 +247,7 @@ def create_policy(robot_type="sim"):
             # Try to load pretrained model with make_policy
             policy = make_policy(
                 "smolvla",
-                pretrained="lerobot/koch_aloha",  # Use a working pretrained model
+                pretrained="lerobot/smolvla_base",  # Use SmolVLA base model
                 config_overrides={
                     "input_shapes": {
                         "observation.images.top": [3, 480, 640],

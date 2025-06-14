@@ -21,7 +21,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 
 # Step 4: Install LeRobot and RecycloBot
 echo -e "\n🤖 Step 4: Installing LeRobot and RecycloBot..."
-pip install "lerobot[smolvla,sim]>=0.5.0"
+pip install "lerobot[smolvla,sim]==0.4.0"
 pip install "lerobot[aloha]"  # Dual-arm manipulation environment
 pip install -e .
 
