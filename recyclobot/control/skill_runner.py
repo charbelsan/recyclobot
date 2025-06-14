@@ -129,7 +129,7 @@ class SkillRunner:
         Returns:
             Success status
         """
-        action, param = self.parse_skill(skill_str)
+        action_type, param = self.parse_skill(skill_str)
         
         # Convert skill to natural language instruction for SmolVLA
         language_instruction = self.skill_to_language_prompt(skill_str)
@@ -144,20 +144,69 @@ class SkillRunner:
             # Get observation
             obs = env.get_observation() if hasattr(env, 'get_observation') else env.observation
             
-            # SmolVLA expects language instruction with the observation
-            # Based on the blog, it processes both vision and language
-            obs_with_instruction = obs.copy() if isinstance(obs, dict) else {"image": obs}
-            obs_with_instruction["instruction"] = language_instruction
+            # SmolVLA expects specific observation format
+            # Convert observation to LeRobot format
+            if isinstance(obs, dict):
+                # Get image - check multiple possible keys (prioritize LeRobot format)
+                image = obs.get("observation.images.top", 
+                               obs.get("observation.images.main_camera",
+                               obs.get("image", obs.get("observation.image", None))))
+                if image is None:
+                    # Look for any image key
+                    for key in obs:
+                        if "image" in key:
+                            image = obs[key]
+                            break
+                    if image is None:
+                        raise ValueError(f"No image found in observation. Keys: {obs.keys()}")
+                
+                # Get state - check multiple possible keys
+                state = obs.get("observation.state", obs.get("state", np.zeros(14)))
+                
+                # Ensure proper types and shapes
+                if isinstance(image, np.ndarray):
+                    # Convert to torch tensor and ensure shape is (C, H, W)
+                    if image.ndim == 3 and image.shape[-1] == 3:  # (H, W, C)
+                        image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
+                    elif image.ndim == 3 and image.shape[0] == 3:  # (C, H, W)
+                        image = torch.from_numpy(image).float() / 255.0
+                    else:
+                        raise ValueError(f"Unexpected image shape: {image.shape}")
+                
+                if isinstance(state, np.ndarray):
+                    state = torch.from_numpy(state).float()
+                
+                obs_formatted = {
+                    "observation.images.top": image,
+                    "observation.state": state,
+                    "task": language_instruction  # SmolVLA expects 'task', not 'instruction'
+                }
+            else:
+                # If obs is just an image, create proper format
+                if isinstance(obs, np.ndarray):
+                    if obs.ndim == 3 and obs.shape[-1] == 3:  # (H, W, C)
+                        obs = torch.from_numpy(obs).permute(2, 0, 1).float() / 255.0
+                    elif obs.ndim == 3 and obs.shape[0] == 3:  # (C, H, W)
+                        obs = torch.from_numpy(obs).float() / 255.0
+                
+                obs_formatted = {
+                    "observation.images.top": obs,
+                    "observation.state": torch.zeros(14),  # Default state for SO-101 (6 joints + gripper) x2 (pos + vel)
+                    "task": language_instruction
+                }
             
             # Get action from policy
             with torch.no_grad():
-                # SmolVLA forward pass with language instruction
-                if hasattr(self.policy, 'predict_action'):
+                # SmolVLA forward pass with properly formatted observation
+                if hasattr(self.policy, 'select_action'):
+                    # Use select_action for inference (manages action queue)
+                    action = self.policy.select_action(obs_formatted)
+                elif hasattr(self.policy, 'predict_action'):
                     # Some implementations use predict_action
-                    action = self.policy.predict_action(obs_with_instruction)
+                    action = self.policy.predict_action(obs_formatted)
                 else:
                     # Standard forward pass
-                    action = self.policy(obs_with_instruction)
+                    action = self.policy(obs_formatted)
             
             # Execute action
             if hasattr(action, 'cpu'):
@@ -172,8 +221,13 @@ class SkillRunner:
             
             # Log if logger provided
             if logger:
+                # Convert back to original format for logging
+                log_obs = {
+                    "image": obs.get("image", obs.get("observation.images.main_camera")),
+                    "state": obs.get("state", obs.get("observation.state"))
+                }
                 logger.record(
-                    obs=obs,
+                    obs=log_obs,
                     action=action,
                     done=False,
                     extra={
@@ -187,16 +241,21 @@ class SkillRunner:
             time.sleep(self.dt)
             step_count += 1
             
-            # Simple completion heuristics (can be improved)
-            if action == "pick" and step_count > 30:  # ~3 seconds at 10Hz
+            # Simple completion heuristics based on skill type and time
+            if action_type == "pick" and step_count > 30:  # ~3 seconds at 10Hz
                 break
-            elif action == "place" and step_count > 40:  # ~4 seconds
+            elif action_type == "place" and step_count > 40:  # ~4 seconds
                 break
         
         # Log skill completion
         if logger:
+            # Convert back to original format for logging
+            log_obs = {
+                "image": obs.get("image", obs.get("observation.images.main_camera")),
+                "state": obs.get("state", obs.get("observation.state"))
+            }
             logger.record(
-                obs=obs,
+                obs=log_obs,
                 action=action,
                 done=True,
                 extra={

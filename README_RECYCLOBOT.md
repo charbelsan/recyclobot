@@ -34,18 +34,26 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
 conda create -n recyclobot python=3.10 -y
 conda activate recyclobot
 
-# Installer LeRobot + SmolVLA
-python -m pip install "lerobot[feetech]==0.4.*"  # inclut gym-mujoco + feetech
+# Installer LeRobot avec support SmolVLA et SO-101
+pip install "lerobot[smolvla,feetech]==0.5.0"  # Version avec SmolVLA support
+
+# Télécharger les poids SmolVLA (IMPORTANT!)
+huggingface-cli download lerobot/smolvla_base --local-dir ~/.cache/lerobot
+# ou pour un modèle pré-entraîné sur des tâches de manipulation:
+huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
 
 # Si vous voulez Qwen planner local
-python -m pip install "transformers>=4.40" "bitsandbytes" "accelerate"
+pip install "transformers[vision]>=4.44.0" "bitsandbytes>=0.41.0" "accelerate>=0.26.0"
 
 # Gemini (optionnel)
-python -m pip install google-generativeai
+pip install google-generativeai
 
 # Clone RecycloBot
 git clone https://github.com/your-username/recyclobot.git
 cd recyclobot
+
+# Installer RecycloBot en mode dev
+pip install -e .
 ```
 
 ### 2. Connecter et détecter la webcam
@@ -150,6 +158,64 @@ Le script:
 huggingface-cli repo create recyclobot-desk --type dataset -y
 huggingface-cli upload --repo-type dataset \
     recyclobot-desk recyclobot_data/* -y
+```
+
+### 8. Collecte de Dataset au Format LeRobot (IMPORTANT!)
+
+Pour fine-tuner SmolVLA sur vos propres tâches de recyclage:
+
+```bash
+# Collecte téléopérée avec annotations de planning
+python scripts/collect_recyclobot_dataset.py \
+    --robot-type so101 \
+    --repo-id your-username/recyclobot-demos \
+    --num-episodes 50 \
+    --tasks-file recycling_tasks.json
+
+# Collecte autonome avec planner
+python scripts/collect_recyclobot_dataset.py \
+    --robot-type so101 \
+    --repo-id your-username/recyclobot-demos \
+    --autonomous \
+    --planner gemini \
+    --num-episodes 20
+```
+
+### 9. Fine-tuning SmolVLA pour RecycloBot
+
+```bash
+# Option 1: Script RecycloBot avec LoRA (efficace)
+python scripts/train_recyclobot.py \
+    --dataset-name your-username/recyclobot-demos \
+    --output-dir outputs/recyclobot_smolvla \
+    --use-lora \
+    --num-epochs 10
+
+# Option 2: Utiliser LeRobot natif
+python -m lerobot.scripts.train \
+    policy=smolvla \
+    dataset_repo_id=your-username/recyclobot-demos \
+    hydra.run.dir=outputs/train/recyclobot_smolvla \
+    training.num_epochs=20 \
+    training.batch_size=8 \
+    policy.use_lora=true
+```
+
+### 10. Évaluation du Système
+
+```bash
+# Évaluer la précision du planning
+python scripts/evaluate_recyclobot.py \
+    --dataset your-username/recyclobot-test \
+    --checkpoint outputs/recyclobot_smolvla \
+    --mode planning
+
+# Test sur robot réel
+python scripts/evaluate_recyclobot.py \
+    --robot so101 \
+    --live-eval \
+    --num-trials 20 \
+    --mode full
 ```
 
 ## 📋 Commandes clés résumé
@@ -311,6 +377,49 @@ RecycloBot extends LeRobot's dataset format with planning metadata:
     "current_skill": "pick(bottle)",
     "language_instruction": "pick up the plastic bottle"  # Natural language for SmolVLA
 }
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues and Solutions
+
+**1. SmolVLA Model Loading Fails**
+```bash
+# Error: "Could not load pretrained model"
+# Solution: Download weights explicitly
+huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot
+```
+
+**2. Camera Not Found**
+```bash
+# Error: "No image found in observation"
+# Solution: Check camera index
+python -m lerobot.find_cameras  # Lists available cameras
+# Update robot config with correct index
+```
+
+**3. State Dimension Mismatch**
+```bash
+# Error: "Expected state dim 14 but got 7"
+# Solution: SO-101 has 14 state dimensions (7 joints x 2 for pos+vel)
+# Update your robot config if using different robot
+```
+
+**4. Planning Fails**
+```bash
+# Check API keys
+echo $GEMINI_API_KEY
+echo $OPENAI_API_KEY
+
+# Test planner directly
+python -c "from recyclobot.planning.gemini_planner import plan; print(plan(Image.new('RGB', (640,480)), 'test'))"
+```
+
+**5. Dataset Format Issues**
+```bash
+# Use LeRobot's native format
+# Wrong: {"image": ..., "instruction": ...}
+# Right: {"observation.images.top": ..., "task": ...}
 ```
 
 ## 🧪 Testing

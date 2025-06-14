@@ -129,16 +129,22 @@ def create_environment(robot_type="sim"):
                     
                 def reset(self, seed=None):
                     self.step_count = 0
+                    # Return observation in LeRobot format
                     obs = {
-                        "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
-                        "state": np.random.randn(7).astype(np.float32)
+                        "observation.images.main_camera": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
+                        "observation.state": np.random.randn(7).astype(np.float32),
+                        "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
+                        "state": np.random.randn(7).astype(np.float32)  # Legacy support
                     }
                     return obs, {}
                 
                 def get_observation(self):
+                    # Return observation in LeRobot format
                     obs = {
-                        "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
-                        "state": np.random.randn(7).astype(np.float32)
+                        "observation.images.main_camera": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
+                        "observation.state": np.random.randn(7).astype(np.float32),
+                        "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
+                        "state": np.random.randn(7).astype(np.float32)  # Legacy support
                     }
                     return obs
                 
@@ -191,22 +197,55 @@ def create_policy(robot_type="sim"):
     """
     try:
         from lerobot.common.policies.factory import make_policy
+        from lerobot.common.policies.smolvla.configuration_smolvla import SmolVLAConfig
+        from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy
         
         # Load pre-trained SmolVLA policy
         device = "cuda" if robot_type != "sim" and torch.cuda.is_available() else "cpu"
         
         print("Loading SmolVLA from HuggingFace...")
         
-        # SmolVLA expects specific config
-        policy = make_policy(
-            "smolvla",
-            policy_kwargs={
-                "pretrained": "HuggingFaceM4/SmolVLA-Base",  # The actual SmolVLA model
-            },
-            device=device
-        )
+        try:
+            # Try to load pretrained model with make_policy
+            policy = make_policy(
+                "smolvla",
+                pretrained="lerobot/koch_aloha",  # Use a working pretrained model
+                config_overrides={
+                    "input_shapes": {
+                        "observation.images.top": [3, 480, 640],
+                        "observation.state": [14],  # SO-101 has 14 state dims
+                    },
+                    "output_shapes": {
+                        "action": [7],  # 6 joints + gripper
+                    }
+                }
+            )
+            print("Loaded pretrained SmolVLA model")
+        except Exception as e:
+            print(f"Could not load pretrained model: {e}")
+            print("Creating SmolVLA policy from scratch...")
+            
+            # Create config with proper features for RecycloBot
+            config = SmolVLAConfig(
+                input_features={
+                    "observation.images.top": {"shape": [3, 480, 640], "type": "image"},
+                    "observation.state": {"shape": [14], "type": "state"}
+                },
+                output_features={
+                    "action": {"shape": [7], "type": "action"}
+                },
+                # Use smaller chunk size for demo
+                chunk_size=10,
+                n_action_steps=10,
+            )
+            
+            # Create policy without pretrained weights
+            policy = SmolVLAPolicy(config)
         
-        print(f"Loaded SmolVLA policy on {device}")
+        policy.to(device)
+        policy.eval()  # Set to evaluation mode
+        
+        print(f"SmolVLA policy ready on {device}")
         print("Note: SmolVLA uses natural language instructions, not goal IDs!")
         return policy
         

@@ -186,6 +186,12 @@ class RecycloBotLogger:
             
     def create_dataset_card(self):
         """Create a dataset card for HuggingFace Hub."""
+        # Gather metadata safely
+        episodes = self.metadata.get('recorded_episodes', [])
+        planners = set(ep.get('planner_name', 'unknown') for ep in episodes) if episodes else {'unknown'}
+        num_episodes = len(episodes)
+        total_steps = sum(ep.get('total_steps', 0) for ep in episodes) if episodes else 0
+        
         card_content = f"""---
 task_categories:
 - robotics
@@ -209,9 +215,9 @@ This dataset contains robot demonstrations for recycling/waste sorting tasks usi
 
 - **Robot**: SO-ARM100 (6-DOF robotic arm)
 - **Task**: Waste sorting into recycling, compost, and trash bins
-- **Planner**: {', '.join(set(ep['planner_name'] for ep in self.metadata['recorded_episodes']))}
-- **Episodes**: {len(self.metadata['recorded_episodes'])}
-- **Total Steps**: {sum(ep['total_steps'] for ep in self.metadata['recorded_episodes'])}
+- **Planner**: {', '.join(planners)}
+- **Episodes**: {num_episodes}
+- **Total Steps**: {total_steps}
 
 ### Supported Tasks
 
@@ -256,12 +262,12 @@ MIT License
 ### Citation Information
 
 ```bibtex
-@misc{recyclobot2024,
-  title={RecycloBot: Vision-Language Planning for Waste Sorting},
-  author={RecycloBot Team},
-  year={2024},
-  publisher={HuggingFace}
-}
+@misc{{recyclobot2024,
+  title={{RecycloBot: Vision-Language Planning for Waste Sorting}},
+  author={{RecycloBot Team}},
+  year={{2024}},
+  publisher={{HuggingFace}}
+}}
 ```
 """
         
