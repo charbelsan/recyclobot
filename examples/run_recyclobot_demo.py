@@ -36,12 +36,29 @@ def select_planner(force_planner=None, config_path=None):
     Select appropriate planner based on availability and user preference.
     
     Args:
-        force_planner: Force specific planner ("gemini", "qwen", "openai", etc.)
+        force_planner: Force specific planner ("gemini", "qwen", "openai", "smolvlm", etc.)
         config_path: Path to config file for OpenAI-style planners
         
     Returns:
         Tuple of (planner_name, planner_function)
     """
+    # Handle direct SmolVLA execution (no separate planner)
+    if force_planner == "direct":
+        from recyclobot.planning.direct_smolvla_planner import plan
+        print("Using direct SmolVLA execution (no separate planner)")
+        return "direct", plan
+    
+    # Handle SmolVLM planner (same model as in SmolVLA but used separately)
+    if force_planner == "smolvlm":
+        try:
+            from recyclobot.planning.smolvlm_planner import plan
+            print("Using SmolVLM planner (same model as in SmolVLA)")
+            return "smolvlm", plan
+        except ImportError as e:
+            print(f"Error: Cannot use SmolVLM planner: {e}")
+            print("Install with: pip install transformers>=4.44.0")
+            sys.exit(1)
+    
     # Handle OpenAI-style planners
     if force_planner in ["openai", "anthropic", "local", "ollama", "vllm", "together"] or os.getenv("OPENAI_API_KEY"):
         try:
@@ -276,8 +293,8 @@ def main():
     )
     parser.add_argument(
         "--planner",
-        choices=["gemini", "qwen", "openai", "anthropic", "local", "ollama", "vllm", "together"],
-        help="Force specific planner (default: auto-select)"
+        choices=["direct", "gemini", "qwen", "openai", "anthropic", "local", "ollama", "vllm", "together", "smolvlm"],
+        help="Force specific planner (default: auto-select, 'direct' uses SmolVLA without separate planner)"
     )
     parser.add_argument(
         "--config",

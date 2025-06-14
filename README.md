@@ -61,10 +61,11 @@ python scripts/collect_recyclobot_dataset_v3.py \
 
 ## 📊 System Architecture
 
+### Option 1: Two-Stage Planning (Current Default)
 ```
 User Task: "Sort the recycling"
     ↓
-Vision-Language Planner (Gemini/GPT-4V)
+Vision-Language Planner (Gemini/GPT-4V/Qwen)
     ↓
 Skills: ["pick(plastic_bottle)", "place(recycling_bin)"]
     ↓
@@ -75,13 +76,34 @@ SmolVLA Policy (Vision + Language → Actions)
 Robot Execution (SO-101)
 ```
 
+### Option 2: Direct SmolVLA (More Efficient!)
+```
+User Task: "Sort the recycling"
+    ↓
+SmolVLA Policy (Vision + Language → Actions)
+    ↓
+Robot Execution (SO-101)
+```
+
+Since SmolVLA = SmolVLM + Action Expert, it already has vision-language understanding!
+
 ### How SmolVLA Works
 
 SmolVLA is a Vision-Language-Action model that:
-1. Takes RGB images + natural language instructions
-2. Outputs continuous robot actions
-3. The language specifies WHAT to manipulate (e.g., "pick up the red block")
-4. Uses vision to understand WHERE and HOW
+1. Contains SmolVLM (500M param VLM) for understanding
+2. Takes RGB images + natural language instructions
+3. Outputs continuous robot actions
+4. The language specifies WHAT to manipulate (e.g., "pick up the red block")
+5. Uses vision to understand WHERE and HOW
+
+### Using SmolVLA Directly (Recommended)
+
+```bash
+# Skip separate planning, use SmolVLA's built-in understanding
+python examples/run_recyclobot_demo.py --robot so101 --planner direct --prompt "Sort all the recycling"
+```
+
+This is more efficient because SmolVLA already contains the same vision-language model!
 
 ## 🗂️ Critical: Dataset Format
 
