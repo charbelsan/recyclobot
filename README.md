@@ -15,6 +15,24 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
 
 ## 🚀 Quick Start
 
+### Test Without Training (Base Model)
+
+```bash
+# 1. Quick test of base capabilities
+python test_base_model.py
+
+# 2. Run simulation demo
+python examples/run_recyclobot_demo.py --robot sim --episodes 1
+
+# 3. See what base SmolVLA can do
+python -c "from recyclobot.planning.direct_smolvla_planner import plan; \
+           from PIL import Image; \
+           img = Image.new('RGB', (640, 480)); \
+           print(plan(img, 'Sort the recycling'))"
+```
+
+**See [QUICK_INFERENCE_GUIDE.md](QUICK_INFERENCE_GUIDE.md) for detailed testing without training!**
+
 ### Installation
 
 ```bash
