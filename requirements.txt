@@ -1,0 +1,29 @@
+# RecycloBot Requirements
+
+# Core dependencies
+lerobot>=0.4.0
+torch>=2.2.0
+torchvision>=0.17.0
+transformers>=4.36.0
+datasets>=2.14.0
+
+# Vision-language models
+google-generativeai>=0.3.0  # For Gemini planner
+# Note: Qwen-VL installed via transformers
+
+# Computer vision
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Data handling
+numpy>=1.24.0
+pyarrow>=14.0.0
+
+# Development
+pytest>=7.4.0
+black>=23.0.0
+isort>=5.12.0
+
+# Optional for real robot
+# pyserial>=3.5  # For Feetech motors
+# dynamixel-sdk>=3.7.0  # For Dynamixel motors
