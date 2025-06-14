@@ -63,4 +63,4 @@ htmlcov/
 # Temporary files
 *.tmp
 *.bak
-test_*.py
+# test_*.py  # Commented out to allow test scripts
