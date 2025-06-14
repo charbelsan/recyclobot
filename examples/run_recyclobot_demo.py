@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sys
 from datetime import datetime
@@ -30,22 +31,53 @@ from recyclobot.control.skill_runner import SkillRunner
 from recyclobot.logging.dataset_logger import RecycloBotLogger
 
 
-def select_planner(force_planner=None):
+def select_planner(force_planner=None, config_path=None):
     """
     Select appropriate planner based on availability and user preference.
     
     Args:
-        force_planner: Force specific planner ("gemini" or "qwen")
+        force_planner: Force specific planner ("gemini", "qwen", "openai", etc.)
+        config_path: Path to config file for OpenAI-style planners
         
     Returns:
         Tuple of (planner_name, planner_function)
     """
-    if force_planner == "qwen":
-        from recyclobot.planning.qwen_planner import plan
-        return "qwen", plan
+    # Handle OpenAI-style planners
+    if force_planner in ["openai", "anthropic", "local", "ollama", "vllm", "together"] or os.getenv("OPENAI_API_KEY"):
+        try:
+            from recyclobot.planning.openai_planner import OpenAIPlanner
+            
+            # Load config to get planner name
+            config = {}
+            if config_path and os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    if config_path.endswith('.yaml') or config_path.endswith('.yml'):
+                        import yaml
+                        config = yaml.safe_load(f)
+                    else:
+                        config = json.load(f)
+            
+            # Determine which OpenAI-style planner to use
+            if force_planner:
+                planner_name = force_planner
+            elif config.get("default_planner"):
+                planner_name = config["default_planner"]
+            else:
+                planner_name = "openai"
+            
+            # Create planner instance
+            planner = OpenAIPlanner(config_path)
+            print(f"Using {planner_name} planner (OpenAI-compatible API)")
+            return planner_name, lambda img, prompt: planner.plan(img, prompt)
+            
+        except (ImportError, ValueError, RuntimeError) as e:
+            if force_planner in ["openai", "anthropic", "local"]:
+                print(f"Error: Cannot use {force_planner} planner: {e}")
+                sys.exit(1)
+            print(f"OpenAI-style planner unavailable ({e})")
     
-    # Try Gemini first if API key exists
-    if os.getenv("GEMINI_API_KEY") or force_planner == "gemini":
+    # Try Gemini
+    if force_planner == "gemini" or os.getenv("GEMINI_API_KEY"):
         try:
             from recyclobot.planning.gemini_planner import plan
             print("Using Gemini planner")
@@ -54,11 +86,17 @@ def select_planner(force_planner=None):
             if force_planner == "gemini":
                 print(f"Error: Cannot use Gemini planner: {e}")
                 sys.exit(1)
-            print(f"Gemini unavailable ({e}), falling back to Qwen")
+            print(f"Gemini unavailable ({e})")
     
-    # Fallback to Qwen
+    # Try Qwen
+    if force_planner == "qwen":
+        from recyclobot.planning.qwen_planner import plan
+        print("Using Qwen-VL planner (local)")
+        return "qwen", plan
+    
+    # Default fallback to Qwen
     from recyclobot.planning.qwen_planner import plan
-    print("Using Qwen-VL planner (local)")
+    print("Using Qwen-VL planner (local) as fallback")
     return "qwen", plan
 
 
@@ -199,8 +237,13 @@ def main():
     )
     parser.add_argument(
         "--planner",
-        choices=["gemini", "qwen"],
+        choices=["gemini", "qwen", "openai", "anthropic", "local", "ollama", "vllm", "together"],
         help="Force specific planner (default: auto-select)"
+    )
+    parser.add_argument(
+        "--config",
+        default="recyclobot/config.yaml",
+        help="Path to configuration file (YAML or JSON) for OpenAI-style planners"
     )
     parser.add_argument(
         "--episodes",
@@ -233,7 +276,7 @@ def main():
     print("=" * 60)
     
     # Initialize components
-    planner_name, planner_fn = select_planner(args.planner)
+    planner_name, planner_fn = select_planner(args.planner, args.config)
     env = create_environment(args.robot)
     policy = create_policy(args.robot)
     

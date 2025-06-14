@@ -12,7 +12,12 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
 
 ## 🎯 Features
 
-- **Vision-Language Planning**: Uses Gemini or Qwen-VL to analyze scenes and plan sorting sequences
+- **Vision-Language Planning**: Multiple planner options:
+  - Google Gemini (cloud)
+  - Qwen-VL (local)
+  - OpenAI GPT-4V
+  - Anthropic Claude
+  - Any OpenAI-compatible API (Ollama, vLLM, Together.ai, etc.)
 - **Skill-Based Control**: Maps high-level skills to low-level robot actions via SmolVLA
 - **Dataset Logging**: Records demonstrations with planning metadata for training
 - **Multi-Robot Support**: Works in simulation and on real SO-ARM100 hardware
@@ -117,9 +122,19 @@ python -m lerobot.scripts.control_robot \
 ### 6. Utiliser SmolVLA + planner (boucle autonome)
 
 ```bash
-export GEMINI_API_KEY="votre_clé"    # sinon, Qwen sera pris
-python examples/run_recyclobot_demo.py --robot so101 \
-       --prompt "Trie les déchets de mon bureau"
+# Option 1: Gemini (Google)
+export GEMINI_API_KEY="votre_clé"
+python examples/run_recyclobot_demo.py --robot so101 --prompt "Trie les déchets"
+
+# Option 2: OpenAI GPT-4V
+export OPENAI_API_KEY="votre_clé" 
+python examples/run_recyclobot_demo.py --robot so101 --planner openai --prompt "Trie les déchets"
+
+# Option 3: Local avec Ollama
+python examples/run_recyclobot_demo.py --robot so101 --planner ollama --config recyclobot/config.yaml
+
+# Option 4: Anthropic Claude
+python examples/run_recyclobot_demo.py --robot so101 --planner anthropic --config recyclobot/config.yaml
 ```
 
 Le script:
@@ -174,6 +189,43 @@ your-workspace/
 - **Les wrappers** (`gemini_planner.py`, `qwen_planner.py`) sont ajoutés à votre dépôt
 - **Après le hackathon**, un PR officiel vers LeRobot est trivial
 
+## ⚙️ Configuration
+
+### Using Config File
+
+Edit `recyclobot/config.yaml` to configure planners:
+
+```yaml
+# RecycloBot Configuration
+planners:
+  openai:
+    api_key: "sk-..."  # or use OPENAI_API_KEY env var
+    api_base: "https://api.openai.com/v1"
+    model: "gpt-4-vision-preview"
+    
+  ollama:
+    api_key: "not-needed"  # Local models don't need keys
+    api_base: "http://localhost:11434/v1" 
+    model: "llava:13b"
+    
+  anthropic:
+    api_key: "your-key"
+    api_base: "https://api.anthropic.com/v1"
+    model: "claude-3-opus-20240229"
+
+default_planner: "openai"
+```
+
+### Supported Providers
+
+| Provider | API Base | Models | Notes |
+|----------|----------|---------|-------|
+| OpenAI | `https://api.openai.com/v1` | `gpt-4-vision-preview` | Best quality |
+| Anthropic | `https://api.anthropic.com/v1` | `claude-3-opus-20240229` | Good reasoning |
+| Ollama | `http://localhost:11434/v1` | `llava:13b`, `bakllava` | Local, free |
+| vLLM | `http://localhost:8000/v1` | Any vision model | High performance |
+| Together | `https://api.together.xyz/v1` | Llama-3.2-Vision | Fast inference |
+
 ## 📊 Example Output
 
 ```
@@ -210,12 +262,15 @@ Dataset saved to: recyclobot_data
 ```
 RecycloBot System
 ├── Vision-Language Planner
-│   ├── Gemini-1.5 (cloud)
-│   └── Qwen-VL (local fallback)
+│   ├── Gemini-1.5 (Google Cloud)
+│   ├── GPT-4V (OpenAI)
+│   ├── Claude-3 (Anthropic)
+│   ├── Qwen-VL (local)
+│   └── Any OpenAI-compatible API
 ├── Skill Mapping Layer
-│   └── Skills → Goal IDs → Language Prompts
+│   └── Skills → Natural Language Instructions
 ├── Control Layer
-│   └── SmolVLA Policy (goal-conditioned)
+│   └── SmolVLA Policy (vision-language-action)
 └── Dataset Logger
     └── HuggingFace Datasets + Planning Metadata
 ```

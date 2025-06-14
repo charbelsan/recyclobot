@@ -1,0 +1,67 @@
+# RecycloBot Configuration
+# Configure your vision-language planners here
+
+planners:
+  # OpenAI GPT-4 Vision
+  openai:
+    api_key: "your-openai-key-here"  # or use OPENAI_API_KEY env var
+    api_base: "https://api.openai.com/v1"
+    model: "gpt-4-vision-preview"
+    
+  # Anthropic Claude 3
+  anthropic:
+    api_key: "your-anthropic-key-here"
+    api_base: "https://api.anthropic.com/v1"
+    model: "claude-3-opus-20240229"
+    
+  # Local Ollama instance
+  ollama:
+    api_key: "not-needed"  # Ollama doesn't require API key
+    api_base: "http://localhost:11434/v1"
+    model: "llava:13b"  # or bakllava, llava:7b, etc.
+    
+  # Local vLLM server
+  vllm:
+    api_key: "not-needed"
+    api_base: "http://localhost:8000/v1"
+    model: "llava-v1.5-13b"
+    
+  # Together.ai
+  together:
+    api_key: "your-together-key-here"
+    api_base: "https://api.together.xyz/v1"
+    model: "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo"
+
+# Default planner to use if not specified
+default_planner: "openai"
+
+# Recycling-specific settings
+recycling_settings:
+  # Available bins
+  bins:
+    - recycling_bin
+    - compost_bin
+    - trash_bin
+    
+  # Common objects by category
+  common_objects:
+    recycling:
+      - plastic_bottle
+      - aluminum_can
+      - glass_bottle
+      - paper
+      - cardboard
+    compost:
+      - food_waste
+      - banana_peel
+      - apple_core
+      - organic_waste
+    trash:
+      - plastic_bag
+      - styrofoam
+      - mixed_waste
+      
+# Optional: Override prompts
+prompts:
+  # system_prompt: "Custom system prompt here"
+  # user_prompt_template: "Custom template with {user} placeholder"

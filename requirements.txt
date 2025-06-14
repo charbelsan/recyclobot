@@ -9,6 +9,8 @@ datasets>=2.14.0
 
 # Vision-language models
 google-generativeai>=0.3.0  # For Gemini planner
+requests>=2.28.0  # For OpenAI-style API calls
+PyYAML>=6.0  # For config file parsing
 # Note: Qwen-VL installed via transformers
 
 # Computer vision
