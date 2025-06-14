@@ -25,8 +25,13 @@ conda activate recyclobot
 # Install CUDA dependencies (if not already installed)
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
-# Install LeRobot with simulation support
+# Install LeRobot with simulation support and gym environments
 pip install "lerobot[smolvla,sim]>=0.5.0"
+
+# Install specific gym environments (choose based on your needs)
+pip install "lerobot[aloha]"    # Dual-arm manipulation tasks
+pip install "lerobot[pusht]"    # 2D pushing tasks
+pip install "lerobot[xarm]"     # Single-arm manipulation
 
 # Install RecycloBot
 pip install -e .
@@ -90,7 +95,49 @@ except Exception as e:
 
 ## 🎮 Step 4: Run Simulation Demo
 
-### Basic Simulation (Mock Environment)
+### Option 1: LeRobot Gym Environments (Recommended)
+
+LeRobot comes with several gym environments for robotic manipulation:
+
+#### Aloha Environment (Dual-arm manipulation)
+```bash
+# Test dual-arm insertion task
+python examples/run_recyclobot_gym_demo.py \
+    --env aloha \
+    --task AlohaInsertion-v0 \
+    --prompt "Insert the peg into the hole" \
+    --render \
+    --episodes 1
+
+# Test cube transfer task
+python examples/run_recyclobot_gym_demo.py \
+    --env aloha \
+    --task AlohaTransferCube-v0 \
+    --prompt "Transfer the cube to the target location" \
+    --render
+```
+
+#### PushT Environment (2D manipulation)
+```bash
+# Simpler 2D pushing task
+python examples/run_recyclobot_gym_demo.py \
+    --env pusht \
+    --task PushT-v0 \
+    --prompt "Push the T-shaped block to the target" \
+    --render
+```
+
+#### Xarm Environment (Single-arm manipulation)
+```bash
+# Single arm lifting task
+python examples/run_recyclobot_gym_demo.py \
+    --env xarm \
+    --task XarmLift-v0 \
+    --prompt "Lift the object" \
+    --render
+```
+
+### Option 2: Mock Environment (Fallback)
 ```bash
 # Run with simulated robot (default direct mode)
 python examples/run_recyclobot_demo.py \
@@ -104,15 +151,6 @@ python examples/run_recyclobot_demo.py \
     --robot sim \
     --planner qwen \
     --prompt "Pick up the aluminum can and place it in recycling"
-```
-
-### Advanced: LeRobot Simulation Environment
-```bash
-# If LeRobot simulation environments are available
-python examples/run_recyclobot_demo.py \
-    --robot sim \
-    --prompt "Sort the items on the table" \
-    --camera-index 0
 ```
 
 ## 📊 Step 5: Test Data Collection

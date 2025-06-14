@@ -22,6 +22,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 # Step 4: Install LeRobot and RecycloBot
 echo -e "\n🤖 Step 4: Installing LeRobot and RecycloBot..."
 pip install "lerobot[smolvla,sim]>=0.5.0"
+pip install "lerobot[aloha]"  # Dual-arm manipulation environment
 pip install -e .
 
 # Step 5: Install additional dependencies
@@ -40,8 +41,18 @@ python test_recyclobot_gpu.py
 echo -e "\n🎮 Step 8: Running simulation demo..."
 python examples/run_recyclobot_demo.py --robot sim --episodes 1 --output test_demo
 
+# Step 9: Test gym environment (optional)
+echo -e "\n🎯 Step 9: Testing Aloha gym environment..."
+if python -c "import gym_aloha" 2>/dev/null; then
+    echo "Running Aloha environment demo..."
+    python examples/run_recyclobot_gym_demo.py --env aloha --episodes 1 --output test_aloha
+else
+    echo "Aloha environment not installed (optional)"
+fi
+
 echo -e "\n✅ Setup complete! RecycloBot is ready on your GPU."
 echo -e "\n📝 Next steps:"
-echo "  1. Run more demos: python examples/run_recyclobot_demo.py --robot sim"
-echo "  2. Collect dataset: python scripts/collect_recyclobot_dataset_v3.py --robot-path lerobot/configs/robot/sim.yaml"
-echo "  3. Check GPU usage: nvidia-smi"
+echo "  1. Run mock simulation: python examples/run_recyclobot_demo.py --robot sim"
+echo "  2. Run gym environment: python examples/run_recyclobot_gym_demo.py --env aloha --render"
+echo "  3. Collect dataset: python scripts/collect_recyclobot_dataset_v3.py --robot-path lerobot/configs/robot/sim.yaml"
+echo "  4. Check GPU usage: nvidia-smi"

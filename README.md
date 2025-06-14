@@ -11,7 +11,7 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
   - Any OpenAI-compatible API (Ollama, vLLM, Together.ai)
 - **SmolVLA Execution**: Natural language instructions → robot actions
 - **Proper Dataset Format**: LeRobot-compatible data collection for training
-- **Multi-Robot Support**: SO-ARM100 hardware and simulation
+- **Multi-Robot Support**: SO-ARM100 hardware and simulation (Aloha, PushT, Xarm gym environments)
 
 ## 🚀 Quick Start
 
