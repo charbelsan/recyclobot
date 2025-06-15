@@ -18,6 +18,8 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
+from recyclobot.control.adapters import pad_state, adapt_observation_for_policy
+
 
 # SmolVLA uses natural language, not goal IDs!
 # These are skill templates for generating instructions
@@ -57,7 +59,16 @@ class SkillRunner:
         self.policy = policy
         self.dt = 1.0 / fps
         self.skill_timeout = skill_timeout
-        self.device = policy.device if hasattr(policy, 'device') else 'cpu'
+        
+        # Get device from policy parameters
+        if hasattr(policy, 'device'):
+            self.device = policy.device
+        else:
+            # Get device from first parameter
+            try:
+                self.device = next(policy.parameters()).device
+            except:
+                self.device = torch.device('cpu')
         
     def parse_skill(self, skill_str: str) -> Tuple[str, Optional[str]]:
         """
@@ -144,55 +155,55 @@ class SkillRunner:
             # Get observation
             obs = env.get_observation() if hasattr(env, 'get_observation') else env.observation
             
-            # SmolVLA expects specific observation format
-            # Convert observation to LeRobot format
+            # Use adapter to properly format observation for SmolVLA
             if isinstance(obs, dict):
-                # Get image - check multiple possible keys (prioritize LeRobot format)
-                image = obs.get("observation.images.top", 
-                               obs.get("observation.images.top",
-                               obs.get("image", obs.get("observation.image", None))))
-                if image is None:
-                    # Look for any image key
-                    for key in obs:
-                        if "image" in key:
-                            image = obs[key]
-                            break
-                    if image is None:
-                        raise ValueError(f"No image found in observation. Keys: {obs.keys()}")
+                # Adapt observation (handles state padding to 14 dims)
+                obs_formatted = adapt_observation_for_policy(obs, n_joints=6)
+                obs_formatted["task"] = language_instruction  # SmolVLA expects 'task' key
                 
-                # Get state - check multiple possible keys
-                state = obs.get("observation.state", obs.get("state", np.zeros(14)))
+                # Process all images and convert to torch tensors on correct device
+                for img_key in ["observation.image", "observation.image2", "observation.image3"]:
+                    if img_key in obs_formatted:
+                        image = obs_formatted[img_key]
+                        if isinstance(image, np.ndarray):
+                            # Convert to torch tensor and ensure shape is (C, H, W)
+                            if image.ndim == 3 and image.shape[-1] == 3:  # (H, W, C)
+                                image = torch.from_numpy(image).permute(2, 0, 1).float().to(self.device) / 255.0
+                            elif image.ndim == 3 and image.shape[0] == 3:  # (C, H, W)
+                                image = torch.from_numpy(image).float().to(self.device) / 255.0
+                            else:
+                                raise ValueError(f"Unexpected image shape for {img_key}: {image.shape}")
+                            obs_formatted[img_key] = image
+                        elif isinstance(image, torch.Tensor) and image.device != self.device:
+                            obs_formatted[img_key] = image.to(self.device)
                 
-                # Ensure proper types and shapes
-                if isinstance(image, np.ndarray):
-                    # Convert to torch tensor and ensure shape is (C, H, W)
-                    if image.ndim == 3 and image.shape[-1] == 3:  # (H, W, C)
-                        image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
-                    elif image.ndim == 3 and image.shape[0] == 3:  # (C, H, W)
-                        image = torch.from_numpy(image).float() / 255.0
-                    else:
-                        raise ValueError(f"Unexpected image shape: {image.shape}")
+                # Convert state to torch and move to device
+                if isinstance(obs_formatted["observation.state"], np.ndarray):
+                    obs_formatted["observation.state"] = torch.from_numpy(obs_formatted["observation.state"]).float().to(self.device)
                 
-                if isinstance(state, np.ndarray):
-                    state = torch.from_numpy(state).float()
-                
-                obs_formatted = {
-                    "observation.images.top": image,
-                    "observation.state": state,
-                    "task": language_instruction  # SmolVLA expects 'task', not 'instruction'
-                }
+                # Ensure batch dimension for all tensors
+                for key in ["observation.image", "observation.image2", "observation.image3", "observation.state"]:
+                    if key in obs_formatted and isinstance(obs_formatted[key], torch.Tensor):
+                        if obs_formatted[key].dim() == 1:  # State vector
+                            obs_formatted[key] = obs_formatted[key].unsqueeze(0)
+                        elif obs_formatted[key].dim() == 3:  # Image without batch
+                            obs_formatted[key] = obs_formatted[key].unsqueeze(0)
             else:
                 # If obs is just an image, create proper format
                 if isinstance(obs, np.ndarray):
                     if obs.ndim == 3 and obs.shape[-1] == 3:  # (H, W, C)
-                        obs = torch.from_numpy(obs).permute(2, 0, 1).float() / 255.0
+                        obs = torch.from_numpy(obs).permute(2, 0, 1).float().to(self.device) / 255.0
                     elif obs.ndim == 3 and obs.shape[0] == 3:  # (C, H, W)
-                        obs = torch.from_numpy(obs).float() / 255.0
+                        obs = torch.from_numpy(obs).float().to(self.device) / 255.0
                 
+                # Use pad_state for default state
+                default_state = pad_state(np.zeros(6))  # SO-101 has 6 joints
                 obs_formatted = {
-                    "observation.images.top": obs,
-                    "observation.state": torch.zeros(14),  # Default state for SO-101 (6 joints + gripper) x2 (pos + vel)
-                    "task": language_instruction
+                    "observation.image": obs,
+                    "observation.image2": obs,  # SmolVLA expects 3 cameras
+                    "observation.image3": obs,  # SmolVLA expects 3 cameras
+                    "observation.state": torch.from_numpy(default_state).float().to(self.device),
+                    "task": language_instruction  # SmolVLA expects 'task' key
                 }
             
             # Get action from policy
@@ -232,7 +243,7 @@ class SkillRunner:
                     done=False,
                     extra={
                         "current_skill": skill_str,
-                        "language_instruction": language_instruction,
+                        "task": language_instruction,  # SmolVLA expects 'task' key
                         "step_in_skill": step_count
                     }
                 )
@@ -259,6 +270,8 @@ class SkillRunner:
                 action=action,
                 done=True,
                 extra={
+                    "current_skill": skill_str,
+                    "task": language_instruction,
                     "skill_completed": skill_str,
                     "duration": time.time() - start_time,
                     "total_steps": step_count

@@ -31,7 +31,7 @@ RECYCLOBOT_FEATURES = Features({
     "planner_name": Value("string"),  # "gemini" or "qwen"
     "planner_log": Value("string"),   # Full skill sequence as JSON string
     "current_skill": Value("string"),  # Current executing skill
-    "language_instruction": Value("string"), # Natural language instruction for SmolVLA
+    "task": Value("string"),  # Natural language instruction for SmolVLA (expects 'task' key)
     
     # Recycling metrics
     "detected_objects": Value("string"),  # JSON list of detected items
@@ -114,23 +114,39 @@ class RecycloBotLogger:
             image = np.zeros((224, 224, 3), dtype=np.uint8)
         
         # Process state
-        state = obs.get("state", np.zeros(7))  # Assume 7-DOF
+        state = obs.get("state", np.zeros(6))  # SmolVLA uses 6-dim state
+        
+        # Handle torch tensors
+        if hasattr(state, "cpu"):
+            state = state.cpu().numpy()
+        
+        # Convert to list
         if hasattr(state, "tolist"):
             state = state.tolist()
         elif isinstance(state, (list, tuple)):
             state = list(state)
+        elif isinstance(state, np.ndarray):
+            state = state.tolist()
         else:
             state = [float(state)]
         
         # Process action
         if action is None:
-            action = np.zeros_like(state)
-        if hasattr(action, "tolist"):
-            action = action.tolist()
-        elif isinstance(action, (list, tuple)):
-            action = list(action)
+            action = [0.0] * len(state)  # Create list of zeros matching state length
         else:
-            action = [float(action)]
+            # Handle torch tensors
+            if hasattr(action, "cpu"):
+                action = action.cpu().numpy()
+            
+            # Convert to list
+            if hasattr(action, "tolist"):
+                action = action.tolist()
+            elif isinstance(action, (list, tuple)):
+                action = list(action)
+            elif isinstance(action, np.ndarray):
+                action = action.tolist()
+            else:
+                action = [float(action)]
         
         # Add to buffer
         self.episode_buffer["episode_id"].append(self.episode_id)
@@ -144,12 +160,18 @@ class RecycloBotLogger:
         self.episode_buffer["planner_name"].append(extra.get("planner_name", ""))
         self.episode_buffer["planner_log"].append(extra.get("planner_log", "[]"))
         self.episode_buffer["current_skill"].append(extra.get("current_skill", ""))
-        self.episode_buffer["language_instruction"].append(extra.get("language_instruction", ""))
+        self.episode_buffer["task"].append(extra.get("task", extra.get("language_instruction", "")))
         
         # Recycling metrics
         self.episode_buffer["detected_objects"].append(extra.get("detected_objects", "[]"))
         self.episode_buffer["target_bin"].append(extra.get("target_bin", ""))
-        self.episode_buffer["skill_completed"].append(extra.get("skill_completed", False))
+        # Handle skill_completed which might be a string (skill name) or bool
+        skill_completed = extra.get("skill_completed", False)
+        if isinstance(skill_completed, str):
+            # If it's a skill name string, treat as True
+            self.episode_buffer["skill_completed"].append(True)
+        else:
+            self.episode_buffer["skill_completed"].append(bool(skill_completed))
         
         # Save episode if done
         if done:
@@ -159,9 +181,43 @@ class RecycloBotLogger:
         """Save current episode buffer to disk."""
         if not any(len(v) > 0 for v in self.episode_buffer.values()):
             return
+        
+        # Debug: Check for problematic data
+        for key in ["state", "action"]:
+            if key in self.episode_buffer and self.episode_buffer[key]:
+                for i, item in enumerate(self.episode_buffer[key]):
+                    if not isinstance(item, list):
+                        print(f"WARNING: {key}[{i}] is not a list: type={type(item)}, value={item}")
+                        # Try to fix it
+                        if hasattr(item, "tolist"):
+                            self.episode_buffer[key][i] = item.tolist()
+                        elif isinstance(item, (tuple, np.ndarray)):
+                            self.episode_buffer[key][i] = list(item)
+                        else:
+                            self.episode_buffer[key][i] = [item]
+                    # Also check for nested lists
+                    elif isinstance(item, list) and item and isinstance(item[0], list):
+                        print(f"WARNING: {key}[{i}] is a nested list, flattening...")
+                        self.episode_buffer[key][i] = item[0]
             
         # Create HuggingFace dataset from buffer
-        dataset = Dataset.from_dict(self.episode_buffer, features=RECYCLOBOT_FEATURES)
+        try:
+            dataset = Dataset.from_dict(self.episode_buffer, features=RECYCLOBOT_FEATURES)
+        except TypeError as e:
+            print(f"\nError creating dataset: {e}")
+            print("\nExpected features schema:")
+            for key, feature in RECYCLOBOT_FEATURES.items():
+                print(f"  {key}: {feature}")
+            print("\nDebugging episode buffer:")
+            for key, values in self.episode_buffer.items():
+                if values:
+                    print(f"\n{key}:")
+                    print(f"  Length: {len(values)}")
+                    print(f"  First item type: {type(values[0])}")
+                    print(f"  First item value: {repr(values[0])[:100]}...")  # Show first 100 chars
+                    if isinstance(values[0], list) and values[0]:
+                        print(f"  First item[0] type: {type(values[0][0])}")
+            raise
         
         # Save as parquet
         episode_path = self.output_dir / f"episode_{self.episode_id:04d}.parquet"

@@ -13,6 +13,26 @@ RecycloBot adds intelligent waste sorting capabilities to [LeRobot](https://gith
 - **Proper Dataset Format**: LeRobot-compatible data collection for training
 - **Multi-Robot Support**: SO-ARM100 hardware and simulation (Aloha, PushT, Xarm gym environments)
 
+## ⚠️ Important: SmolVLA Integration Notes
+
+This project uses SmolVLA from LeRobot. Please note these critical requirements:
+
+1. **Single GPU Only**: The model must run on a single GPU to avoid device conflicts
+   - Set `CUDA_VISIBLE_DEVICES=0` before running
+   - The scripts automatically handle this
+   
+2. **State/Action Dimensions**: SmolVLA uses 6-dimensional state/action vectors
+   - Not 14-dimensional as some documentation suggests
+   - The code handles dimension adaptation automatically
+   
+3. **Language Instructions**: SmolVLA expects the `"task"` key for language input
+   - Not `"language_instruction"` as in other models
+   - The adapters handle this mapping
+   
+4. **Normalization Workaround**: The pretrained model has infinity values in normalization buffers
+   - Use `recyclobot.utils.smolvla_workaround` for proper loading
+   - This is handled automatically in the demos
+
 ## 🚀 Quick Start
 
 ### Test Without Training (Base Model)

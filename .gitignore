@@ -47,6 +47,11 @@ wandb/
 recyclobot_data/
 lerobot/
 
+# Robot recordings
+*.rec
+*.parquet
+*.arrow
+
 # API keys
 .env
 .env.local

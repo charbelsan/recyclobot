@@ -16,6 +16,8 @@ Usage:
 import argparse
 import json
 import os
+# Force single GPU to avoid SmolVLA multi-device issues
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -168,21 +170,23 @@ def create_environment(robot_type="sim"):
                 def reset(self, seed=None):
                     self.step_count = 0
                     # Return observation in LeRobot format
+                    # Based on quick_validate.py, we only need single camera
                     obs = {
-                        "observation.images.top": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
-                        "observation.state": np.random.randn(7).astype(np.float32),
+                        "observation.image": np.random.randint(0, 256, (256, 256, 3), dtype=np.uint8),
+                        "observation.state": np.random.randn(6).astype(np.float32),  # 6-dim for SmolVLA
                         "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
-                        "state": np.random.randn(7).astype(np.float32)  # Legacy support
+                        "state": np.random.randn(6).astype(np.float32)  # Legacy support
                     }
                     return obs, {}
                 
                 def get_observation(self):
-                    # Return observation in LeRobot format
+                    # Return observation in LeRobot format  
+                    # Based on quick_validate.py, we only need single camera
                     obs = {
-                        "observation.images.top": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
-                        "observation.state": np.random.randn(7).astype(np.float32),
+                        "observation.image": np.random.randint(0, 256, (256, 256, 3), dtype=np.uint8),
+                        "observation.state": np.random.randn(6).astype(np.float32),  # 6-dim for SmolVLA
                         "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
-                        "state": np.random.randn(7).astype(np.float32)  # Legacy support
+                        "state": np.random.randn(6).astype(np.float32)  # Legacy support
                     }
                     return obs
                 
@@ -234,57 +238,50 @@ def create_policy(robot_type="sim"):
         Policy instance
     """
     try:
-        from lerobot.common.policies.factory import make_policy
-        from lerobot.common.policies.smolvla.configuration_smolvla import SmolVLAConfig
+        # Try the workaround for normalization issues
+        try:
+            from recyclobot.utils.smolvla_workaround import create_policy_with_workaround
+            print("Using SmolVLA with normalization workaround...")
+            return create_policy_with_workaround()
+        except ImportError:
+            pass
+        
+        # Fallback to standard loading
         from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy
         
-        # Load pre-trained SmolVLA policy
-        device = "cuda" if robot_type != "sim" and torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         
-        print("Loading SmolVLA from HuggingFace...")
+        print("Loading SmolVLA base model from HuggingFace...")
         
-        try:
-            # Try to load pretrained model with make_policy
-            policy = make_policy(
-                "smolvla",
-                pretrained="lerobot/smolvla_base",  # Use SmolVLA base model
-                config_overrides={
-                    "input_shapes": {
-                        "observation.images.top": [3, 480, 640],
-                        "observation.state": [14],  # SO-101 has 14 state dims
-                    },
-                    "output_shapes": {
-                        "action": [7],  # 6 joints + gripper
-                    }
-                }
-            )
-            print("Loaded pretrained SmolVLA model")
-        except Exception as e:
-            print(f"Could not load pretrained model: {e}")
-            print("Creating SmolVLA policy from scratch...")
-            
-            # Create config with proper features for RecycloBot
-            config = SmolVLAConfig(
-                input_features={
-                    "observation.images.top": {"shape": [3, 480, 640], "type": "image"},
-                    "observation.state": {"shape": [14], "type": "state"}
-                },
-                output_features={
-                    "action": {"shape": [7], "type": "action"}
-                },
-                # Use smaller chunk size for demo
-                chunk_size=10,
-                n_action_steps=10,
-            )
-            
-            # Create policy without pretrained weights
-            policy = SmolVLAPolicy(config)
-        
+        # Just load the model directly - stats should be included
+        policy = SmolVLAPolicy.from_pretrained("lerobot/smolvla_base")
         policy.to(device)
         policy.eval()  # Set to evaluation mode
         
-        print(f"SmolVLA policy ready on {device}")
+        print(f"SmolVLA ready on {device}")
         print("Note: SmolVLA uses natural language instructions, not goal IDs!")
+        
+        # Check what features it expects
+        if hasattr(policy.config, 'input_features'):
+            print(f"Expected features: {list(policy.config.input_features.keys())}")
+        
+        # Check if normalization stats are loaded
+        has_infinity = False
+        for name, param in policy.state_dict().items():
+            if "normalize_inputs" in name and "mean" in name:
+                is_inf = torch.isinf(param).any().item()
+                if is_inf:
+                    print(f"⚠️  Warning: {name} has infinity values!")
+                    has_infinity = True
+        
+        if has_infinity:
+            print("\n⚠️  Model has normalization issues. Try using the workaround:")
+            print("  from recyclobot.utils.smolvla_workaround import create_policy_with_workaround")
+            print("  policy = create_policy_with_workaround()")
+        
+        if device == "cpu":
+            print("⚠️  Running on CPU (will be slower)")
+        
         return policy
         
     except ImportError as e:
@@ -398,7 +395,7 @@ def main():
                 "planner_name": planner_name,
                 "planner_log": str(skills),
                 "current_skill": "planning",
-                "language_instruction": "initializing"
+                "task": "initializing"  # SmolVLA expects 'task' key
             }
         )
         
@@ -409,7 +406,7 @@ def main():
         final_obs = env.get_observation()
         logger.record(
             obs=final_obs,
-            action=np.zeros(7),
+            action=np.zeros(6),  # SmolVLA uses 6-dim actions
             done=True,
             extra={
                 "planner_name": planner_name,

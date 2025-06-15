@@ -1,0 +1,7 @@
+include recycling_tasks.json
+include requirements.txt
+include LICENSE
+include README.md
+recursive-include recyclobot *.yaml *.json *.md
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
