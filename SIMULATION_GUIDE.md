@@ -27,7 +27,7 @@ conda activate recyclobot
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # Install LeRobot from GitHub with simulation extras
-pip install "lerobot[smolvla,sim,aloha,pusht,xarm] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
+pip install "lerobot[smolvla,sim,aloha,pusht,xarm] @ git+https://github.com/huggingface/lerobot.git"
 
 # Install RecycloBot
 pip install -e .

@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
-        "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git@v0.4.0",
+        "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git",
         "google-generativeai>=0.3.0",
         "transformers[vision]>=4.44.0",
         "accelerate>=0.26.0",

@@ -48,6 +48,21 @@ python examples/run_recyclobot_demo.py --robot sim
 
 **See [SIMULATION_GUIDE.md](SIMULATION_GUIDE.md) for complete simulation setup!**
 
+### Connect Real SO-ARM100
+
+```bash
+# 1. Test connection
+python test_real_arm.py
+
+# 2. Simple pickup demo (direct SmolVLA, no planner)
+python simple_pickup_demo.py
+
+# 3. Full demo
+python examples/run_recyclobot_demo.py --robot so101
+```
+
+**See [REAL_ARM_CONNECTION_GUIDE.md](REAL_ARM_CONNECTION_GUIDE.md) for detailed setup!**
+
 ### Installation
 
 ```bash
