@@ -1,5 +1,7 @@
 # 🦾 SO-ARM100 Real Robot Connection Guide
 
+> **📢 UPDATED**: After SmolVLA integration fixes! See also `ROBOT_TESTING_GUIDE.md` for complete testing workflow.
+
 This guide shows exactly how to connect your SO-ARM100 robot and make it move using SmolVLA's direct mode.
 
 ## 📋 What You Need

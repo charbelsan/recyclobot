@@ -33,6 +33,13 @@ This project uses SmolVLA from LeRobot. Please note these critical requirements:
    - Use `recyclobot.utils.smolvla_workaround` for proper loading
    - This is handled automatically in the demos
 
+## 📚 Documentation
+
+- **[ROBOT_TESTING_GUIDE.md](ROBOT_TESTING_GUIDE.md)** - Step-by-step guide for testing with real robot
+- **[QUICK_REFERENCE_CARD.md](QUICK_REFERENCE_CARD.md)** - Essential commands and troubleshooting
+- **[REAL_ARM_CONNECTION_GUIDE.md](REAL_ARM_CONNECTION_GUIDE.md)** - Hardware connection details
+- **[SIMULATION_GUIDE.md](SIMULATION_GUIDE.md)** - Testing in simulation first
+
 ## 🚀 Quick Start
 
 ### Test Without Training (Base Model)
