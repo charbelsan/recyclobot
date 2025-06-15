@@ -32,7 +32,7 @@ python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)}')"
 
 ```bash
 # Install LeRobot with SmolVLA and simulation environments from GitHub
-pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
+pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@main"
 
 # Install gym environments (choose what you need)
 pip install "lerobot[aloha]"    # Dual-arm manipulation

@@ -169,7 +169,7 @@ def create_environment(robot_type="sim"):
                     self.step_count = 0
                     # Return observation in LeRobot format
                     obs = {
-                        "observation.images.main_camera": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
+                        "observation.images.top": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
                         "observation.state": np.random.randn(7).astype(np.float32),
                         "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
                         "state": np.random.randn(7).astype(np.float32)  # Legacy support
@@ -179,7 +179,7 @@ def create_environment(robot_type="sim"):
                 def get_observation(self):
                     # Return observation in LeRobot format
                     obs = {
-                        "observation.images.main_camera": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
+                        "observation.images.top": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),
                         "observation.state": np.random.randn(7).astype(np.float32),
                         "image": np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8),  # Legacy support
                         "state": np.random.randn(7).astype(np.float32)  # Legacy support
@@ -212,7 +212,7 @@ def create_environment(robot_type="sim"):
             
         except ImportError as e:
             print(f"Error: LeRobot not properly installed: {e}")
-            print("Install with: pip install 'lerobot[feetech] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
+            print("Install with: pip install 'lerobot[feetech] @ git+https://github.com/huggingface/lerobot.git@main'")
             sys.exit(1)
         except Exception as e:
             print(f"Error connecting to robot: {e}")
@@ -289,7 +289,7 @@ def create_policy(robot_type="sim"):
         
     except ImportError as e:
         print(f"Error: LeRobot not installed properly: {e}")
-        print("Please run: pip install 'lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@v0.4.0'")
+        print("Please run: pip install 'lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@main'")
         sys.exit(1)
     except Exception as e:
         print(f"Error loading SmolVLA: {e}")

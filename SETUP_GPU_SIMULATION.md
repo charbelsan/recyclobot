@@ -26,7 +26,7 @@ conda activate recyclobot
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # Install LeRobot with simulation support and gym environments from GitHub
-pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
+pip install "lerobot[smolvla,sim] @ git+https://github.com/huggingface/lerobot.git@main"
 
 # Install specific gym environments (choose based on your needs)
 pip install "lerobot[aloha]"    # Dual-arm manipulation tasks
@@ -274,7 +274,7 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 #### Missing Dependencies
 ```bash
 # Install all optional dependencies from GitHub
-pip install "lerobot[smolvla,sim,dev] @ git+https://github.com/huggingface/lerobot.git@v0.4.0"
+pip install "lerobot[smolvla,sim,dev] @ git+https://github.com/huggingface/lerobot.git@main"
 pip install matplotlib plotly pandas
 ```
 

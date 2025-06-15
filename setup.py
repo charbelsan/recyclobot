@@ -8,7 +8,7 @@ setup(
     description="Vision-Language Planning for Robotic Waste Sorting with LeRobot",
     author="RecycloBot Team",
     packages=find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     install_requires=[
         "lerobot[smolvla,feetech] @ git+https://github.com/huggingface/lerobot.git",
         "google-generativeai>=0.3.0",

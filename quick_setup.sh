@@ -5,7 +5,7 @@ echo "🚀 Quick RecycloBot Setup"
 
 # Install in current directory
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 && \
-pip install "lerobot[smolvla,sim,aloha] @ git+https://github.com/huggingface/lerobot.git@v0.4.0" && \
+pip install "lerobot[smolvla,sim,aloha] @ git+https://github.com/huggingface/lerobot.git@main" && \
 pip install -e . && \
 pip install "transformers[vision]>=4.44.0" "accelerate>=0.26.0" && \
 huggingface-cli download lerobot/koch_aloha --local-dir ~/.cache/lerobot && \

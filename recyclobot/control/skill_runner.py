@@ -149,7 +149,7 @@ class SkillRunner:
             if isinstance(obs, dict):
                 # Get image - check multiple possible keys (prioritize LeRobot format)
                 image = obs.get("observation.images.top", 
-                               obs.get("observation.images.main_camera",
+                               obs.get("observation.images.top",
                                obs.get("image", obs.get("observation.image", None))))
                 if image is None:
                     # Look for any image key
@@ -223,7 +223,7 @@ class SkillRunner:
             if logger:
                 # Convert back to original format for logging
                 log_obs = {
-                    "image": obs.get("image", obs.get("observation.images.main_camera")),
+                    "image": obs.get("image", obs.get("observation.images.top")),
                     "state": obs.get("state", obs.get("observation.state"))
                 }
                 logger.record(
@@ -251,7 +251,7 @@ class SkillRunner:
         if logger:
             # Convert back to original format for logging
             log_obs = {
-                "image": obs.get("image", obs.get("observation.images.main_camera")),
+                "image": obs.get("image", obs.get("observation.images.top")),
                 "state": obs.get("state", obs.get("observation.state"))
             }
             logger.record(
