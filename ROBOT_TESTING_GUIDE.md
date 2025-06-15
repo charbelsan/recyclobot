@@ -119,6 +119,9 @@ python examples/run_recyclobot_demo.py --robot so101 --port /dev/ttyUSB1
 
 #### CUDA/GPU Issues
 ```bash
+# Force single GPU (REQUIRED for SmolVLA)
+export CUDA_VISIBLE_DEVICES=0
+
 # Force CPU (slower but works)
 CUDA_VISIBLE_DEVICES="" python examples/run_recyclobot_demo.py --robot so101
 

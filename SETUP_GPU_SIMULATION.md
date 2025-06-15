@@ -207,10 +207,10 @@ try:
             "config_overrides": {
                 "input_shapes": {
                     "observation.images.top": [3, 480, 640],
-                    "observation.state": [14],
+                    "observation.state": [6],  # SmolVLA uses 6-dim state
                 },
                 "output_shapes": {
-                    "action": [7],
+                    "action": [6],  # SmolVLA outputs 6-dim actions
                 }
             }
         }
@@ -223,8 +223,10 @@ except Exception as e:
 print("\n3. Testing skill runner...")
 from recyclobot.control.skill_runner import SkillRunner
 runner = SkillRunner(policy if 'policy' in locals() else None)
-instruction = runner.skill_to_language_prompt("pick(plastic_bottle)")
-print(f"   Skill mapping: pick(plastic_bottle) → '{instruction}'")
+skill = "pick(plastic_bottle)"
+action, param = runner.parse_skill(skill)
+instruction = runner.get_language_instruction(action, param)
+print(f"   Skill mapping: {skill} → '{instruction}'")
 
 # Test 4: Mock Execution
 print("\n4. Testing mock execution...")
@@ -232,7 +234,7 @@ class MockEnv:
     def get_observation(self):
         return {
             "observation.images.top": torch.randn(3, 480, 640),
-            "observation.state": torch.randn(14)
+            "observation.state": torch.randn(6)  # SmolVLA expects 6-dim state
         }
     def send_action(self, action):
         pass
@@ -269,6 +271,9 @@ nvidia-smi
 
 # Reduce batch size if OOM
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+
+# Force single GPU (SmolVLA requirement)
+export CUDA_VISIBLE_DEVICES=0
 ```
 
 #### Missing Dependencies

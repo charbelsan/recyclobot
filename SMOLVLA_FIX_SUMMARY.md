@@ -3,9 +3,9 @@
 ## Critical Issues Fixed
 
 ### 1. Dimension Mismatch
-- **Problem**: Code assumed SmolVLA uses 14-dim state (7 joints × 2) and 7-dim actions
-- **Reality**: SmolVLA actually uses 6-dim state/action vectors
-- **Fixed**: Updated all dimension handling in adapters.py, dataset_logger.py, and examples
+- **Problem**: Code assumed SmolVLA would use robot-specific dimensions (e.g., 14-dim state for SO-101)
+- **Reality**: SmolVLA uses standardized 6-dim state/action vectors regardless of robot
+- **Fixed**: Created adapters to convert between robot dimensions and SmolVLA's 6-dim format
 
 ### 2. Language Instruction Key
 - **Problem**: Code used "language_instruction" key

@@ -34,8 +34,8 @@ RecycloBot implements a hierarchical control system for robotic waste sorting, c
 │  │                                  param="bottle"     │    │
 │  └────────────────────────┬───────────────────────────┘    │
 │  ┌────────────────────────▼───────────────────────────┐    │
-│  │  Goal Mapping: pick → goal_id=0                    │    │
-│  │                place → goal_id=1                   │    │
+│  │  Skill Mapping: pick → "pick up the [object]"      │    │
+│  │                place → "place in the [container]"  │    │
 │  └────────────────────────┬───────────────────────────┘    │
 │  ┌────────────────────────▼───────────────────────────┐    │
 │  │  Language Generation: "pick up the plastic bottle"  │    │
@@ -44,9 +44,9 @@ RecycloBot implements a hierarchical control system for robotic waste sorting, c
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                  SmolVLA Policy                              │
-│            (Goal-Conditioned Control)                        │
-│  Input: observation + goal_id + language                    │
-│  Output: joint velocities/torques                          │
+│            (Language-Conditioned Control)                     │
+│  Input: observation + natural language instruction (task)    │
+│  Output: 6-dim action vector                                │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
@@ -90,19 +90,20 @@ Maps high-level skills to robot control:
 
 **Skill Vocabulary**:
 ```python
-RECYCLING_SKILLS = {
-    "pick": 0,      # Pick up object
-    "place": 1,     # Place in container
-    "inspect": 2,   # Examine object
-    "sort": 3,      # General sorting
+# Skills are mapped to natural language templates
+skill_to_instruction = {
+    "pick": "pick up the {object}",
+    "place": "place the object in the {location}",
+    "inspect": "look at the {object}",
+    "sort": "sort the items into bins"
 }
 ```
 
 **Execution Flow**:
 1. Parse skill string (e.g., "pick(bottle)")
 2. Extract action and parameters
-3. Map to SmolVLA goal ID
-4. Generate natural language prompt
+3. Generate natural language prompt
+4. Pass instruction to SmolVLA
 5. Execute with timeout
 6. Monitor completion
 
@@ -116,8 +117,8 @@ SmolVLA is a Vision-Language-Action model that processes both visual observation
 - Proprioceptive state (optional - joint positions)
 
 **Output**:
-- Continuous robot actions (joint velocities/torques)
-- 7-DoF control (6 joints + gripper)
+- 6-dimensional action vector
+- Continuous control values for robot joints
 
 **Key Architecture Details** (from HuggingFace blog):
 - **Vision-Language backbone**: Uses SmolVLM-500M-Instruct for understanding
@@ -148,8 +149,8 @@ Records demonstrations with planning metadata:
 "planner_name"      # Which planner was used
 "planner_log"       # Full skill sequence
 "current_skill"     # Currently executing skill
-"goal_id"           # SmolVLA goal
-"language_prompt"   # Natural language instruction
+"task"              # Natural language instruction
+"task_description"  # Human-readable task description
 "detected_objects"  # Objects in scene
 "target_bin"        # Destination for placement
 ```
@@ -172,9 +173,9 @@ Records demonstrations with planning metadata:
 
 ### Adding New Skills
 
-1. Add to `RECYCLING_SKILLS` mapping
-2. Implement in `skill_to_language_prompt()`
-3. Update planner prompts
+1. Add to `skill_to_instruction` mapping in SkillRunner
+2. Define natural language template
+3. Update planner prompts to use new skill
 4. Add to documentation
 
 ### Adding New Planners

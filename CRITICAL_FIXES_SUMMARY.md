@@ -49,11 +49,12 @@ This document summarizes the critical fixes implemented based on the judges' rev
 - Already had good error handling for planners and robot connections
 
 ### 6. State Dimensions Documentation (MEDIUM PRIORITY)
-**Issue**: Unclear if 14 dimensions are correct for SO-101
+**Issue**: Unclear about dimension mismatch between robots and SmolVLA
 **Fix Applied**:
 - Added detailed robot configuration section in README.md
-- Documented state vector structure: 7 positions + 7 velocities
-- Clarified action space: 6 joint commands + 1 gripper command
+- Clarified SmolVLA uses 6-dim state/action vectors universally
+- Documented that adapters handle conversion from robot-specific dimensions (e.g., SO-101's 14-dim state to SmolVLA's 6-dim)
+- Updated all examples and tests to use correct dimensions
 
 ### 7. Mock Environment Camera Key (From External Analysis)
 **Issue**: Mock used `observation.images.main_camera` instead of `observation.images.top`
@@ -70,7 +71,7 @@ This document summarizes the critical fixes implemented based on the judges' rev
 - [x] PyTorch CUDA installation documented with conda
 - [x] Camera index discovery methods documented
 - [x] Import error handling added for core dependencies
-- [x] State dimensions clearly documented as 14 (7×2)
+- [x] State dimensions clearly documented (SmolVLA: 6-dim, SO-101: 14-dim with adapters)
 - [x] Mock environment uses correct observation keys
 - [x] Python version consistent (>=3.10)
 - [x] Shape mismatch bug fixed by using main branch

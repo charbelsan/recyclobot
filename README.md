@@ -22,8 +22,8 @@ This project uses SmolVLA from LeRobot. Please note these critical requirements:
    - The scripts automatically handle this
    
 2. **State/Action Dimensions**: SmolVLA uses 6-dimensional state/action vectors
-   - Not 14-dimensional as some documentation suggests
    - The code handles dimension adaptation automatically
+   - RecycloBot's adapters convert between robot dimensions and SmolVLA's expected format
    
 3. **Language Instructions**: SmolVLA expects the `"task"` key for language input
    - Not `"language_instruction"` as in other models
@@ -238,8 +238,8 @@ dataset/
 {
     "task_index": 0,  # References meta/tasks.jsonl
     "observation.images.top": tensor([3, 480, 640]),
-    "observation.state": tensor([14]),  # SO-101: 7 joints x 2
-    "action": tensor([7]),
+    "observation.state": tensor([6]),   # SmolVLA expects 6-dim state
+    "action": tensor([6]),              # SmolVLA outputs 6-dim actions
     # NO "task" field - added dynamically during loading!
 }
 ```
@@ -255,27 +255,28 @@ dataset/
 ### Critical Fixes Made
 
 1. **Observation Format**: Use `"observation.images.top"` (not `"main_camera"`)
-2. **State Dimensions**: SO-101 has 14 dims (7 joints × 2 for pos+vel)
+2. **State Dimensions**: SO-101 robot has 14 dims (7 joints × 2 for pos+vel), but RecycloBot adapters automatically convert to SmolVLA's 6-dim format
 3. **Model Loading**: Use `lerobot/smolvla_base` (the SmolVLA base model)
 4. **Task Handling**: Pass task during inference AND data collection
 
 ### Robot Configuration Details
 
-#### SO-101/SO-ARM100 State Dimensions
-The state vector contains 14 dimensions:
-- **Positions (7 dims)**: 6 joint angles + 1 gripper position
-- **Velocities (7 dims)**: 6 joint velocities + 1 gripper velocity
+#### SmolVLA Input/Output Dimensions
+SmolVLA uses 6-dimensional vectors for both state and action:
+- **State (6 dims)**: Proprioceptive robot state
+- **Action (6 dims)**: Robot control commands
+
+#### SO-101/SO-ARM100 Robot Dimensions
+The physical robot has different dimensions that RecycloBot's adapters handle:
+- **Robot State**: SO-101 provides 14 dims (7 joint positions + 7 joint velocities)
+- **Robot Action**: SO-101 expects 7 dims (6 joint commands + 1 gripper command)
+- **SmolVLA Format**: Adapters convert to/from SmolVLA's universal 6-dim format
 
 ```python
-# State vector structure:
-state = [j0_pos, j1_pos, j2_pos, j3_pos, j4_pos, j5_pos, gripper_pos,  # positions
-         j0_vel, j1_vel, j2_vel, j3_vel, j4_vel, j5_vel, gripper_vel]  # velocities
+# RecycloBot automatically converts between:
+# Robot format: [j0_pos...j5_pos, gripper_pos, j0_vel...j5_vel, gripper_vel]
+# SmolVLA format: 6-dimensional vector
 ```
-
-#### Action Space
-Actions are 7-dimensional:
-- **Joint commands (6 dims)**: Target positions for 6 joints
-- **Gripper command (1 dim)**: Open/close command
 
 ### Correct Inference Code
 
@@ -283,10 +284,10 @@ Actions are 7-dimensional:
 # For policy inference
 observation = {
     "observation.images.top": image_tensor,  # (C,H,W) normalized
-    "observation.state": state_tensor,       # (14,) for SO-101
+    "observation.state": state_tensor,       # (6,) for SmolVLA
     "task": "pick up the plastic bottle"     # REQUIRED!
 }
-action = policy.select_action(observation)
+action = policy.select_action(observation)  # Returns 6-dim action
 ```
 
 ## 🎓 Training SmolVLA

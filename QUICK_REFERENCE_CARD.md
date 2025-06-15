@@ -26,6 +26,7 @@ python examples/run_recyclobot_demo.py --robot so101 --fps 5
 |---------|-----|
 | Robot not found | `sudo chmod 666 /dev/ttyUSB0` |
 | GPU memory error | `export CUDA_VISIBLE_DEVICES=0` |
+| Multi-GPU device error | Set `CUDA_VISIBLE_DEVICES=0` (SmolVLA requires single GPU) |
 | Model download stuck | `rm -rf ~/.cache/huggingface/hub/models--lerobot--smolvla_base` |
 | Robot moves too fast | Add `--fps 5` to command |
 
@@ -37,7 +38,7 @@ export GEMINI_API_KEY="your-key"
 # For OpenAI planner  
 export OPENAI_API_KEY="your-key"
 
-# Force single GPU (if issues)
+# Force single GPU (REQUIRED for SmolVLA)
 export CUDA_VISIBLE_DEVICES=0
 ```
 

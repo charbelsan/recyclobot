@@ -167,6 +167,8 @@ export HF_HUB_OFFLINE=1  # For offline mode after downloading
 
 2. **Reduce memory usage** if needed:
    ```bash
+   # SmolVLA requires single GPU to avoid device conflicts
+   export CUDA_VISIBLE_DEVICES=0
    export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
    ```
 
